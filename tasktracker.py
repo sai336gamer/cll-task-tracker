@@ -1,46 +1,80 @@
 import argparse
 import json
-import random
 import uuid
-def addtask():
-    
+import os
+
+def addtask(args):
+    """Add a new task to the task tracker."""
     id = str(uuid.uuid4())
-    parser = argparse.ArgumentParser(description="Create a task project")
-
-    
-    parser.add_argument("name", type=str, help="Task Name")
-    parser.add_argument("priority", type=str, choices=["low", "medium", "high"], help="Task Priority")
-    parser.add_argument("status", type=str, choices=["todo", "inprogress", "done"], help="Task Status")
-
-    args = parser.parse_args()
 
     task = {
         "id": id,
-        "name": args.name,
-        "priority": args.priority,
-        "status": args.status
-
+        "name": args[0],
+        "priority": args[1],
+        "status": args[2]
     }
-    tasks= []
+
+    # Load existing tasks
+    try:
+        with open("tasks.json", "r") as file:
+            tasks = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        tasks = []  # Handle missing/corrupt file
+
     tasks.append(task)
     with open("tasks.json", "w") as file:
         json.dump(tasks, file, indent=4)
+
     print(f"Task added with ID: {id}")
 
+def removetask(args):
+    """Remove a task by ID."""
+    task_id = args[0]
 
-def removetask():
-    parser = argparse.ArgumentParser(description="Remove a task project")
-    parser.add_argument("id", type=str, help="Task ID to remove")
-    args = parser.parse_args()
+    try:
+        with open("tasks.json", "r") as file:
+            tasks = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("No tasks found.")
+        return
 
-    tasks = []
-    with open("tasks.json", "r") as file:
-        for line in file:
-            task = json.loads(line.strip())
-            if task["id"] != args.id:
-                tasks.append(task)
+    tasks = [task for task in tasks if task["id"] != task_id]
 
     with open("tasks.json", "w") as file:
-        for task in tasks:
-            file.write(json.dumps(task) + "\n")
+        json.dump(tasks, file, indent=4)
 
+    print(f"Task with ID {task_id} removed successfully.")
+
+def listtasks():
+    """List all tasks."""
+    try:
+        with open("tasks.json", "r") as file:
+            tasks = json.load(file)
+        if not tasks:
+            print("No tasks found.")
+            return
+        for task in tasks:
+            print(f"ID: {task['id']}, Name: {task['name']}, Priority: {task['priority']}, Status: {task['status']}")
+    except (FileNotFoundError, json.JSONDecodeError):
+        print("No tasks found.")
+
+### **🔹 Simple Command Parsing Without Subparsers**
+
+parser = argparse.ArgumentParser(description="Task Tracker CLI")
+parser.add_argument("command", choices=["add", "remove", "list"], help="Task command")
+parser.add_argument("args", nargs="*", help="Arguments for the selected command")
+
+args = parser.parse_args()
+
+if args.command == "add":
+    if len(args.args) != 3:
+        print("Usage: python tasktracker.py add <name> <priority> <status>")
+    else:
+        addtask(args.args)
+elif args.command == "remove":
+    if len(args.args) != 1:
+        print("Usage: python tasktracker.py remove <task_id>")
+    else:
+        removetask(args.args)
+elif args.command == "list":
+    listtasks()
