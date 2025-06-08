@@ -1,7 +1,9 @@
 import argparse
 import json
 import random
+import uuid
 def main():
+    id = uuid.uuid4()
     parser = argparse.ArgumentParser(description="Create a task project")
 
     parser.add_argument("id", type=int, help="Task ID")
@@ -12,8 +14,10 @@ def main():
     args = parser.parse_args()
 
     task = {
-        "id": args.id,
+        "id": id,
         "name": args.name,
         "priority": args.priority,
         "status": args.status
+
     }
+
